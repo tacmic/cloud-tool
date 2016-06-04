@@ -1,0 +1,341 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Resources": {
+        "production": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "13.0.0.0/16",
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "false",
+                "InstanceTenancy": "default",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky"
+                    }
+                ]
+            }
+        },
+        "staging": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": "13.1.0.0/16",
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "false",
+                "InstanceTenancy": "default",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky"
+                    }
+                ]
+            }
+        },
+        "prdPublicA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "production"
+                },
+                "CidrBlock": "13.0.0.0/19",
+                "AvailabilityZone": "ap-northeast-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky-a-public"
+                    }
+                ]
+            }
+        },
+        "prdPublicC": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "production"
+                },
+                "CidrBlock": "13.0.32.0/19",
+                "AvailabilityZone": "ap-northeast-1c",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky-c-public"
+                    }
+                ]
+            }
+        },
+        "prdPriateA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "production"
+                },
+                "CidrBlock": "13.0.64.0/19",
+                "AvailabilityZone": "ap-northeast-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky-a-private"
+                    }
+                ]
+            }
+        },
+        "prdPrivateC": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "production"
+                },
+                "CidrBlock": "13.0.96.0/19",
+                "AvailabilityZone": "ap-northeast-1c",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky-c-private"
+                    }
+                ]
+            }
+        },
+        "stgPublicA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "staging"
+                },
+                "CidrBlock": "13.1.0.0/19",
+                "AvailabilityZone": "ap-northeast-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky-a-public"
+                    }
+                ]
+            }
+        },
+        "stgPublicC": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "staging"
+                },
+                "CidrBlock": "13.1.32.0/19",
+                "AvailabilityZone": "ap-northeast-1c",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky-c-public"
+                    }
+                ]
+            }
+        },        
+        "stgPrivateA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "staging"
+                },
+                "CidrBlock": "13.1.64.0/19",
+                "AvailabilityZone": "ap-northeast-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky-a-private"
+                    }
+                ]
+            }
+        },
+        "stgPrivateC": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "staging"
+                },
+                "CidrBlock": "13.1.96.0/19",
+                "AvailabilityZone": "ap-northeast-1c",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky-c-private"
+                    }
+                ]
+            }
+        },
+        "prdIgw": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "prd-tky"
+                    }
+                ]
+            }
+        },
+        "prdIgwAttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "production"
+                },
+                "InternetGatewayId": {
+                    "Ref": "prdIgw"
+                }
+            }
+        },
+        "stgIgw": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "stg-tky"
+                    }
+                ]
+            }
+        },
+        "stgIgwAttachGateway": {
+			            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "staging"
+                },
+                "InternetGatewayId": {
+                    "Ref": "stgIgw"
+                }
+            }
+        },
+        "prdSecuritygroupAttachNAT":{
+		  "Type" : "AWS::EC2::SecurityGroup",
+		  "Properties" : {
+		     "GroupDescription" : "prd-tky",
+                  "SecurityGroupEgress": [
+                {
+                    "CidrIp": "0.0.0.0/0", 
+                    "FromPort": "-1", 
+                    "IpProtocol": "-1", 
+                    "ToPort": "-1"
+                }
+            ], 
+		     "VpcId" : {
+				"Ref": "production"
+			}
+		  }
+    	},        
+        "stgSecuritygroupAttachNAT":{
+		  "Type" : "AWS::EC2::SecurityGroup",
+		  "Properties" : {
+		     "GroupDescription" : "stg-tky",
+                  "SecurityGroupEgress": [
+                {
+                    "CidrIp": "0.0.0.0/0", 
+                    "FromPort": "-1", 
+                    "IpProtocol": "-1", 
+                    "ToPort": "-1"
+                }
+            ], 
+		     "VpcId" : {
+				"Ref": "staging"
+			}
+		  }
+    	},
+        "prdec2NAT": {
+            "Type": "AWS::EC2::Instance",          
+            "Properties": {
+                "ImageId":"ami-03cf3903",
+                "InstanceType": "t2.micro", 
+                "KeyName":"handson",
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "prdSecuritygroupAttachNAT"
+                    }
+                ], 
+                "SourceDestCheck": "false", 
+                "SubnetId": {
+                    "Ref": "prdPublicA"
+                }, 
+                "Tags": [
+                    {
+                        "Key": "Name", 
+                        "Value":"prd-tky-a-nat-001"
+                    }
+                ]
+            }
+        }, 
+        "stgec2NAT": {
+            "Type": "AWS::EC2::Instance",          
+            "Properties": {
+                "ImageId":"ami-03cf3903",
+                "InstanceType": "t2.micro", 
+                "KeyName":"handson",
+                "SecurityGroupIds": [
+                    {
+                        "Ref": "stgSecuritygroupAttachNAT"
+                    }
+                ], 
+                "SourceDestCheck": "false", 
+                "SubnetId": {
+                    "Ref": "stgPublicA"
+                }, 
+                "Tags": [
+                    {
+                        "Key": "Name", 
+                        "Value":"stg-tky-a-nat-001"
+                    }
+                ]
+            }
+        },        
+        "prdEIPNAT": {
+            "Type": "AWS::EC2::EIP",            
+	          "Properties": {
+                "Domain": "vpc", 
+                "InstanceId": {
+                    "Ref": "prdec2NAT"
+                }
+            }
+        },
+        "stgEIPNAT": {
+            "Type": "AWS::EC2::EIP",
+                "Properties": {
+                "Domain": "vpc", 
+                "InstanceId": {
+                    "Ref": "stgec2NAT"
+                }
+            }
+        },        
+	      "prdroutetable" : {
+	         "Type" : "AWS::EC2::RouteTable",
+	         "Properties" : {
+	            "VpcId" : { "Ref" : "production" }
+	         }
+          },
+	      "stgroutetable" : {
+	         "Type" : "AWS::EC2::RouteTable",
+	         "Properties" : {
+	            "VpcId" : { "Ref" : "staging" }
+	         }
+          },
+		"prdRouteNAT": {
+            "Type": "AWS::EC2::Route",    
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0", 
+                "InstanceId": {
+                    "Ref": "prdec2NAT"
+                }, 
+                "RouteTableId": {
+                    "Ref": "prdroutetable"
+                }
+            }
+	    },
+		"stgrouteNAT": {
+            "Type": "AWS::EC2::Route",    
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0", 
+                "InstanceId": {
+                    "Ref": "stgec2NAT"
+                }, 
+                "RouteTableId": {
+                    "Ref": "stgroutetable"
+                }
+            }
+	    }  
+    }
+}
