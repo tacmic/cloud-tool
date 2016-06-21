@@ -1,0 +1,154 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "CloudTrailS3bucketName": {
+      "Type": "String",
+      "Default": "takitou-name",
+      "Description": "Enter S3BucketName for CloudTrail"
+    },
+    "SQSName": {
+      "Type": "String",
+      "Default": "tekitou-name",
+      "Description": "Enter SQSName"
+    }
+  },
+  "Resources": {
+    "S3bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Ref": "CloudTrailS3bucketName"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "CloudTrailS3bucketName"
+            }
+          },
+          {
+            "Key": "Role",
+            "Value": "CloudTrail"
+          }
+        ]
+      }
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "S3bucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AWSCloudTrailAclCheck",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:GetBucketAcl",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3bucket"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Sid": "AWSCloudTrailWrite",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3bucket"
+                    },
+                    "/AWSLogs/",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "CloudTrail": {
+      "Type": "AWS::CloudTrail::Trail",
+      "Properties": {
+        "IsLogging": "true",
+        "IsMultiRegionTrail": "false",
+        "S3BucketName": {
+          "Ref": "S3bucket"
+        }
+      }
+    },
+    "SQS": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Ref": "SQSName"
+        }
+      }
+    },
+    "SQSPolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Id": {
+            "Fn::Join": [
+              "/",
+              [
+                {
+                  "Fn::GetAtt": [
+                    "SQS",
+                    "Arn"
+                  ]
+                },
+                "SQSDefaultPolicy"
+              ]
+            ]
+          },
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*"
+              },
+              "Action": "SQS:SendMessage",
+              "Resource": "*"
+            }
+          ]
+        },
+        "Queues": [
+          {
+            "Ref": "SQS"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {}
+}

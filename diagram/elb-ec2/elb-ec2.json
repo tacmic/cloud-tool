@@ -1,0 +1,194 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "useVPC": {
+      "Description": "Please select VPC",
+      "Type": "List<AWS::EC2::VPC::Id>"
+    },
+    "useSubnet": {
+      "Description": "Please select ec2 subnet",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "useSubnet2": {
+      "Description": "Please select elb subnet",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "SGName": {
+      "Default": "samplesg",
+      "Description": "Please input security group name",
+      "Type": "String"
+    },
+    "EC2Name": {
+      "Default": "sampleec2",
+      "Description": "Please input ec2 name",
+      "Type": "String"
+    },
+    "ELBName": {
+      "Default": "sampleelb",
+      "Description": "Please input ELB name",
+      "Type": "String"
+    }
+  },
+  "Mappings": {},
+  "Resources": {
+    "iamrole": {
+      "Type": "AWS::IAM::Role",
+      "Metadata": {
+        "comment": "@create IAMRole for instance"
+      },
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "iamroles": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Metadata": {
+        "comment": "@this settings is IAMRole"
+      },
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "iamrole"
+          }
+        ]
+      }
+    },
+    "securitygroup1": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Metadata": {
+        "comment": "@sg settings"
+      },
+      "Properties": {
+        "VpcId": {
+          "Ref": "useVPC"
+        },
+        "GroupDescription": {
+          "Ref": "SGName"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "SGName"
+            }
+          }
+        ]
+      }
+    },
+    "securitygroupingress1": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Metadata": {
+        "comment": "@this settings is for SecurityGroup"
+      },
+      "Properties": {
+        "GroupId": {
+          "Ref": "securitygroup1"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "securitygroup1"
+        }
+      }
+    },
+    "instance1": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "comment": "@EC2 for inventory side"
+      },
+      "Properties": {
+        "ImageId": "ami-383c1956",
+        "InstanceType": "t2.small",
+        "IamInstanceProfile": {
+          "Ref": "iamroles"
+        },
+        "KeyName": "default",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeType": "gp2",
+              "VolumeSize": "8"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "EC2Name"
+            }
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": "true",
+            "Description": "Primary network interface",
+            "DeviceIndex": 0,
+            "SubnetId": {
+              "Ref": "useSubnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "securitygroup1"
+              }
+            ],
+            "AssociatePublicIpAddress": "false"
+          }
+        ]
+      }
+    },
+    "elbprdlb1": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Metadata": {
+        "comment": "@ELB"
+      },
+      "Properties": {
+        "LoadBalancerName": {
+          "Ref": "ELBName"
+        },
+        "Subnets": [
+          {
+            "Ref": "useSubnet2"
+          }
+        ],
+        "CrossZone": "true",
+        "Instances": [
+          {
+            "Ref": "instance1"
+          }
+        ],
+        "SecurityGroups": [
+          {
+            "Ref": "securitygroup1"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Ref": "ELBName"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {}
+}
